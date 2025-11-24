@@ -97,20 +97,19 @@
     
     // Modal 改進：加入 backdrop-filter 讓背景模糊，更有質感
     /* ===== 終極修正版 modal 函式 ===== */
+    /* ===== modal 函式：自動注入右上角關閉鈕 ===== */
     const modal = html => { 
         const o = document.createElement("div"); 
-        
-        // 使用更相容的 CSS 寫法
         o.style.cssText = `
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0; /* 取代 inset: 0 以獲得更好的相容性 */
+            top: 0; left: 0; right: 0; bottom: 0;
             width: 100vw; height: 100vh;
             background: rgba(0,0,0,0.7);
-            z-index: 2147483647; /* 使用 CSS 允許的最大整數，確保在最上層 */
+            z-index: 2147483647;
             display: flex;
-            padding: 20px 10px;
+            padding: 20px 10px; /* 這裡的 padding 確保視窗不會貼齊螢幕邊緣 */
             overflow-y: auto;
-            backdrop-filter: blur(2px); /* 如果手機不支援這行會自動忽略，不影響功能 */
+            backdrop-filter: blur(2px);
         `;
         o.innerHTML = html; 
         
@@ -118,11 +117,28 @@
         o.onclick = (e) => {
             if (e.target === o) o.remove();
         };
+
+        // ★自動加入右上角 X 按鈕★
+        const box = o.querySelector('.coco-dialog-box');
+        if (box) {
+            const xBtn = document.createElement('button');
+            xBtn.className = 'coco-close-x';
+            xBtn.innerHTML = '&times;';
+            xBtn.onclick = () => {
+                // 如果視窗內有定義特殊的關閉邏輯 (例如 revokeObjectURL)，這裡可以觸發它
+                // 但通常直接 remove 視窗是最簡單的
+                
+                // 如果是預覽視窗，可能需要釋放 URL，這裡簡單處理：
+                const img = box.querySelector('img');
+                if (img && img.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(img.src);
+                }
+                o.remove(); 
+            };
+            box.prepend(xBtn); // 插入到視窗最開頭
+        }
         
-        // ★★★ 關鍵修改：掛載到 documentElement (<html>) 而不是 body ★★★
-        // 這能避開 body 上可能存在的 filter/transform 導致 fixed 失效的問題
         document.documentElement.appendChild(o); 
-        
         return o; 
     };
 
@@ -414,7 +430,7 @@
         }
         #coco-snap-bar:hover { opacity: 1; }
 
-        /* === 手機版工具列：強制固定在右下角 === */
+        /* === 手機版工具列：強制固定在右上角 === */
         @media (max-width: 800px) {
             #coco-snap-bar {
                 /* 手機版往下移，避免擋到 ST 的漢堡選單或頂部按鈕 */
@@ -428,33 +444,47 @@
         .coco-dialog-box {
             background: #2b2b2b;
             padding: 20px;
+            /* ★關鍵修正：加入底部安全區域，防止被 iPhone 黑條或瀏覽器工具列擋住 */
+            padding-bottom: calc(20px + env(safe-area-inset-bottom)); 
             border-radius: 12px;
             color: #ddd;
             border: 1px solid #555;
             box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-            
-            /* 關鍵修正：使用 margin: auto 在 flex 容器中自動置中 */
             margin: auto; 
-            
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
+            position: relative; /* 為了讓右上角的 X 能夠定位 */
             
-            /* 電腦版尺寸 */
             width: 450px;
-            max-width: 95vw; /* 確保不超過螢幕寬 */
-            max-height: auto; /* 讓內容決定高度，但不要超過下一行的限制 */
+            max-width: 90vw; 
+            max-height: 80vh; /* 稍微縮小高度，留空間給鍵盤或工具列 */
         }
 
-        /* 內容捲動區 (確保只有內容捲動，標題和按鈕固定) */
         .coco-dialog-content {
             flex: 1;
             overflow-y: auto;
-            max-height: 60vh; /* 限制內容高度，避免整個視窗太長 */
-            padding-right: 5px; /* 捲軸空間 */
+            max-height: 60vh;
+            padding-right: 5px;
         }
 
-        /* === 按鈕樣式 === */
+        /* === 右上角 X 關閉鈕樣式 === */
+        .coco-close-x {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: transparent;
+            border: none;
+            color: #888;
+            font-size: 28px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 5px;
+            z-index: 10;
+        }
+        .coco-close-x:hover { color: #fff; }
+
+        /* 按鈕與操作區 */
         .coco-btn {
             padding: 8px 16px !important;
             font-size: 14px !important;
@@ -477,8 +507,9 @@
             justify-content: flex-end !important;
             align-items: center !important;
             margin-top: 20px !important;
-            border-top: 1px solid #444; /* 加條線區隔 */
+            border-top: 1px solid #444;
             padding-top: 15px;
+            flex-shrink: 0;
         }
     `;
     document.head.appendChild(styleEl);
