@@ -261,31 +261,63 @@
         }
     }
 
-    function save(blob, name) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.click(); }
+    function save(blob, name) { 
+        // 簡單判斷是否為行動裝置 (或是螢幕很窄)
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 800;
 
-    /* ===== 6. 容器 / style (更新版：加入手機適配) ===== */
+        if (isMobile) {
+            // === 手機版行為：顯示預覽視窗 ===
+            const url = URL.createObjectURL(blob);
+            
+            // 建立預覽視窗
+            const html = `
+            <div class="coco-dialog-box" style="text-align:center; padding: 15px;">
+                <h3 style="margin:0 0 10px 0; font-size:16px; color:#aaa;">長按圖片即可儲存</h3>
+                <div style="overflow:auto; max-height: 60vh; border:1px solid #444; margin-bottom:10px; border-radius:4px;">
+                    <img src="${url}" style="max-width:100%; display:block; margin:0 auto;">
+                </div>
+                <div class="coco-actions" style="justify-content: center !important;">
+                    <button class="coco-btn" id="closePrev">關閉</button>
+                </div>
+            </div>`;
+            
+            const p = modal(html);
+            p.querySelector('#closePrev').onclick = () => {
+                p.remove();
+                URL.revokeObjectURL(url); // 釋放記憶體
+            };
+
+        } else {
+            // === 電腦版行為：直接下載 ===
+            const a = document.createElement("a"); 
+            a.href = URL.createObjectURL(blob); 
+            a.download = name; 
+            a.click(); 
+        }
+    }
+
+    /* ===== 6. 容器 / style (手機版終極修正) ===== */
     const styleEl = document.createElement('style');
     styleEl.innerHTML = `
-        /* 截圖生成用的隱藏容器設定 */
+        /* 截圖生成用的隱藏容器 */
         .__snap * { font-family: var(--ff)!important; font-size: var(--fs)!important; line-height: var(--lh)!important; }
         .__snap em, .__snap i { color: var(--it)!important; }
         .__snap strong, .__snap b { font-weight: bold!important; color: inherit; }
 
-        /* === 按鈕工具列 (coco-snap-bar) 設定 === */
+        /* === 工具列按鈕 === */
         #coco-snap-bar {
             position: fixed;
             z-index: 2000;
             display: flex;
             gap: 8px;
-            opacity: 0.3; /* 手機上預設稍微清楚一點，因為沒有滑鼠 hover */
+            opacity: 0.3;
             transition: 0.2s;
-            /* 電腦版預設位置 */
             top: 20px;
             right: 20px;
         }
         #coco-snap-bar:hover { opacity: 1; }
 
-        /* === 手機版工具列位置調整 (螢幕寬度小於 800px 時觸發) === */
+        /* === 手機版工具列：移到更下方，避免擋住功能 === */
         @media (max-width: 800px) {
             #coco-snap-bar {
                 /* 手機版往下移，避免擋到 ST 的漢堡選單或頂部按鈕 */
@@ -295,24 +327,34 @@
             }
         }
 
-        /* === 彈出視窗 (Modal) 通用樣式 === */
+        /* === 彈出視窗 (Modal) === */
         .coco-dialog-box {
             background: #2b2b2b;
             padding: 20px;
             border-radius: 10px;
             color: #ddd;
             border: 1px solid #555;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            /* 關鍵：尺寸控制 */
-            width: 400px;        /* 電腦版寬度 */
-            max-width: 90vw;     /* 手機版最大不超過螢幕寬度的 90% */
-            max-height: 85vh;    /* 高度不超過螢幕 85%，避免無法捲動 */
-            overflow-y: auto;    /* 內容太長時出現捲軸 */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            
             display: flex;
             flex-direction: column;
+            box-sizing: border-box; /* 確保 padding 不會撐大寬度 */
+            
+            /* 電腦版尺寸 */
+            width: 400px;
+            max-height: 85vh;
         }
 
-        /* 您的自定義按鈕樣式 */
+        /* === 手機版視窗強制修正 === */
+        @media (max-width: 800px) {
+            .coco-dialog-box {
+                width: 90vw !important;      /* 寬度佔滿 90% */
+                max-height: 75vh !important; /* 高度最多 75%，預留鍵盤空間 */
+                padding: 15px !important;
+            }
+        }
+
+        /* 按鈕樣式 */
         .coco-btn {
             padding: 8px 16px !important;
             font-size: 14px !important;
@@ -337,6 +379,7 @@
             align-items: center !important;
             margin-top: 20px !important;
             width: 100% !important;
+            flex-shrink: 0; /* 防止按鈕被壓縮 */
         }
     `;
     document.head.appendChild(styleEl);
