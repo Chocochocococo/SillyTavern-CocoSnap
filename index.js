@@ -290,55 +290,78 @@
         }
     }
 
-    /* ===== 手機版長按修復 + 預覽視窗 ===== */
+    /* ===== 終極版 save 函式：支援圖片預覽與 ZIP 下載 ===== */
     function save(blob, name) { 
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 800;
+
+        // 簡單判斷是否為 ZIP 檔
+        const isZip = name.endsWith('.zip');
 
         if (isMobile) {
             const url = URL.createObjectURL(blob);
             
-            // 建立預覽視窗 HTML
-            // 注意 img 標籤加入 id="previewImg" 以便後續綁定事件
-            // 注意 style 加入 -webkit-touch-callout: default; 這是 iOS 顯示長按選單的關鍵
+            // 根據檔案類型決定視窗內容
+            let contentHtml = '';
+            
+            if (isZip) {
+                // === ZIP 檔的介面 ===
+                contentHtml = `
+                    <div style="text-align:center; padding: 20px 10px;">
+                        <div style="font-size: 40px; margin-bottom: 10px;">📦</div>
+                        <h3 style="margin:0 0 10px 0; font-size:16px; color:#fff;">圖片過長，已打包分割</h3>
+                        <p style="color:#aaa; font-size:13px; margin-bottom: 20px;">請點擊下方按鈕下載至「檔案」。</p>
+                        
+                        <a href="${url}" download="${name}" class="coco-btn" style="text-decoration:none; display:inline-block; background:#28a745; border-color:#28a745; color:#fff; padding: 10px 20px;">
+                            下載壓縮檔 (.zip)
+                        </a>
+                    </div>
+                `;
+            } else {
+                // === 圖片檔的介面 (原本的邏輯) ===
+                contentHtml = `
+                    <div style="text-align:center; padding: 15px;">
+                        <h3 style="margin:0 0 10px 0; font-size:16px; color:#aaa;">儲存圖片</h3>
+                        <div style="overflow:auto; max-height: 60vh; border:1px solid #444; margin-bottom:10px; border-radius:4px;">
+                            <img src="${url}" id="previewImg" style="max-width:100%; display:block; margin:0 auto; -webkit-touch-callout: default; user-select: auto;">
+                        </div>
+                        <div style="margin-top:10px;">
+                            <button class="coco-btn" id="shareBtn" style="display:none; background:#28a745; border-color:#28a745;">分享/儲存</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 包裝外框
             const html = `
-            <div class="coco-dialog-box" style="text-align:center; padding: 15px;">
-                <h3 style="margin:0 0 10px 0; font-size:16px; color:#aaa;">長按圖片即可儲存</h3>
-                <div style="overflow:auto; max-height: 60vh; border:1px solid #444; margin-bottom:10px; border-radius:4px;">
-                    <img src="${url}" id="previewImg" style="max-width:100%; display:block; margin:0 auto; -webkit-touch-callout: default; user-select: auto;">
-                </div>
-                <div class="coco-actions" style="justify-content: center !important;">
-                    <button class="coco-btn" id="shareBtn" style="display:none; background:#28a745; border-color:#28a745;">分享/儲存</button>
+            <div class="coco-dialog-box">
+                ${contentHtml}
+                <div class="coco-actions" style="justify-content: center !important; margin-top: 15px;">
                     <button class="coco-btn" id="closePrev">關閉</button>
                 </div>
             </div>`;
             
             const p = modal(html);
-            const imgDom = p.querySelector('#previewImg');
-            const shareBtn = p.querySelector('#shareBtn');
+            
+            // 如果是圖片，才需要綁定長按/分享事件
+            if (!isZip) {
+                const imgDom = p.querySelector('#previewImg');
+                const shareBtn = p.querySelector('#shareBtn');
 
-            // ★關鍵修復 1：阻止 SillyTavern 攔截右鍵/長按事件★
-            imgDom.addEventListener('contextmenu', (e) => {
-                e.stopPropagation(); // 阻止事件傳遞給 ST
-                // 注意：這裡不要寫 e.preventDefault()，否則會真的把選單關掉
-            }, true);
+                imgDom.addEventListener('contextmenu', (e) => { e.stopPropagation(); }, true);
 
-            // ★加分功能：如果瀏覽器支援 Web Share API (通常手機都支援)，顯示「分享」按鈕
-            // 這樣使用者直接點按鈕就會跳出系統存檔選單，不用長按
-            if (navigator.share && navigator.canShare) {
-                const file = new File([blob], name, { type: blob.type });
-                if (navigator.canShare({ files: [file] })) {
-                    shareBtn.style.display = 'inline-block';
-                    shareBtn.onclick = async () => {
-                        try {
-                            await navigator.share({
-                                files: [file],
-                                title: '聊天截圖',
-                                text: '來自 SillyTavern 的截圖'
-                            });
-                        } catch (err) {
-                            console.log('分享取消或失敗', err);
-                        }
-                    };
+                if (navigator.share && navigator.canShare) {
+                    const file = new File([blob], name, { type: blob.type });
+                    if (navigator.canShare({ files: [file] })) {
+                        shareBtn.style.display = 'inline-block';
+                        shareBtn.onclick = async () => {
+                            try {
+                                await navigator.share({
+                                    files: [file],
+                                    title: '聊天截圖'
+                                });
+                            } catch (err) { console.log('分享取消', err); }
+                        };
+                    }
                 }
             }
 
@@ -348,7 +371,7 @@
             };
 
         } else {
-            // 電腦版維持原樣
+            // 電腦版直接下載
             const a = document.createElement("a"); 
             a.href = URL.createObjectURL(blob); 
             a.download = name; 
