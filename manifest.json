@@ -1,0 +1,8 @@
+{
+    "display_name": "CocoSnap",
+    "author": "Choco",
+    "version": "1.0.0",
+    "js": "index.js",
+    "description": "SillyTavern Chat text to png",
+    "loading_order": 100
+}
