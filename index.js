@@ -56,11 +56,10 @@
 
     // 初始化設定物件
     function getCfg() {
-        if (!extensionSettings[EXTENSION_NAME]) {
-            extensionSettings[EXTENSION_NAME] = JSON.parse(JSON.stringify(defaultCfg));
-        }
-        // 確保新版本的 key 存在
-        return Object.assign(extensionSettings[EXTENSION_NAME], defaultCfg, extensionSettings[EXTENSION_NAME]);
+        const savedSettings = extensionSettings[EXTENSION_NAME] || {};
+        const merged = { ...defaultCfg, ...savedSettings };
+        extensionSettings[EXTENSION_NAME] = merged;
+        return extensionSettings[EXTENSION_NAME];
     }
     
     let cfg = getCfg();
@@ -240,7 +239,10 @@
                 if (cancelFlag) { document.body.removeChild(c); wait.remove(); return; }
                 
                 // 使用 window.html2canvas
-                const cvs = await window.html2canvas(c, { scale: SCALE * (window.devicePixelRatio || 1) });
+                const cvs = await window.html2canvas(c, { 
+                    scale: SCALE * (window.devicePixelRatio || 1),
+                    backgroundColor: cfg.bg  // <--- 關鍵：強制讓背景色與您的設定一致，白線就會隱形了
+                });
                 const blob = await new Promise(r => cvs.toBlob(r));
                 
                 if (zip) zip.file(`${chatName}-${i + 1}.png`, blob); 
@@ -297,6 +299,18 @@
     `;
     document.head.appendChild(styleEl);
 
+    function container() {
+        const wDom = cfg.width / SCALE, fsDom = (cfg.fSize / SCALE) + "px", lhDom = (cfg.fSize * cfg.lineR / SCALE) + "px";
+        const d = document.createElement("div");
+        d.className = "__snap";
+        d.style.cssText = `position:fixed;top:-9999px;left:0;width:${wDom}px;background:${cfg.bg};padding:20px;display:flex;flex-direction:column;gap:20px;color:${cfg.txt}`;
+        d.style.setProperty("--ff", cfg.fFamily); 
+        d.style.setProperty("--fs", fsDom); 
+        d.style.setProperty("--lh", lhDom); 
+        d.style.setProperty("--it", cfg.italicColor);
+        return d;
+    }
+
     /* ===== 7. 單則訊息處理 ===== */
     async function buildBlock(m) {
         const user = m.getAttribute("is_user") === "true";
@@ -327,7 +341,13 @@
             holder.style.cssText = `width:${side}px;height:${side}px;border-radius:8px;overflow:hidden;flex:0 0 ${side}px;background:#666;`;
             const img = document.createElement("img");
             img.src = av;
-            img.style.cssText = `width:100%;height:auto;display:block;`;
+            img.style.cssText = `
+                width: 100%;
+                height: auto;
+                display: block;
+                image-rendering: -webkit-optimize-contrast; /* Chrome/Edge 常用 */
+                image-rendering: high-quality;              /* 現代標準 */
+            `;
             holder.appendChild(img);
             wrap.appendChild(holder);
         }
