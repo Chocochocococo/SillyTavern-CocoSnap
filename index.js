@@ -233,6 +233,13 @@
                 <button class="coco-btn danger" id="cancelCap" style="margin-top: 10px;">取消</button>
             </div>
         `);
+
+        if (!document.getElementById('coco-spin-style')) {
+            const s = document.createElement('style');
+            s.id = 'coco-spin-style';
+            s.innerHTML = `@keyframes spin { to { transform: rotate(360deg); } }`;
+            document.head.appendChild(s);
+        }
         
         let cancelFlag = false;
         wait.querySelector("#cancelCap").onclick = () => { cancelFlag = true; };
