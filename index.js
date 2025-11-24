@@ -1,19 +1,25 @@
 // index.js for SillyTavern Extension
 
 (async function () {
-    const EXTENSION_NAME = "CocoSnap"; // 設定在 ST 裡的儲存鍵名
-    const EXTENSION_PATH = `/scripts/extensions/third-party/${EXTENSION_NAME}/`;
+    const EXTENSION_NAME = "SillyTavern-CocoSnap"; // 設定在 ST 裡的儲存鍵名
+    // 取得當前 script 的完整路徑，並移除 index.js 檔名，只保留目錄
+    const scriptPath = document.currentScript ? document.currentScript.src : null;
+    // 如果無法偵測 (極少見)，則回退到預設名稱
+    const EXTENSION_PATH = scriptPath 
+        ? scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1) 
+        : `/scripts/extensions/third-party/SillyTavern-CocoSnap/`;
 
-    // ===== 0. 載入外部依賴 (取代 Chrome manifest 的自動注入) =====
-    // 輔助函式：動態載入 Script
+    // 移除 console.log 的硬編碼名稱，改用通用名稱
+    const LOG_PREFIX = '[CocoSnap]';
+
+    // 之後的 loadLib 函式改成這樣使用 EXTENSION_PATH：
     const loadLib = (filename) => {
         return new Promise((resolve, reject) => {
-            if (document.querySelector(`script[src*="${filename}"]`)) {
-                resolve(); // 已經載入過
-                return;
-            }
+            // 檢查是否已載入
+            if (document.querySelector(`script[src*="${filename}"]`)) { resolve(); return; }
+            
             const script = document.createElement('script');
-            script.src = EXTENSION_PATH + 'lib/' + filename;
+            script.src = EXTENSION_PATH + 'lib/' + filename; // 直接使用偵測到的路徑
             script.onload = resolve;
             script.onerror = reject;
             document.head.appendChild(script);
