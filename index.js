@@ -226,10 +226,13 @@
     };
 
     async function capture(start, end, mode = "last") {
-        const wait = modal(`<div id="waitBox" style="background:rgba(0,0,0,.8);padding:30px;border-radius:12px;color:#fff;display:flex;flex-direction:column;align-items:center;font-family:${cfg.fFamily}; max-width: 90vw; text-align: center;">
-            <div style="font-size:20px;margin-bottom:20px">截圖中，請稍候…</div>
-            <button class="coco-btn danger" id="cancelCap">取消</button>
-        </div>`);
+        const wait = modal(`
+            <div class="coco-wait-box" style="font-family:${cfg.fFamily}">
+                <div style="font-size:20px;">截圖中，請稍候…</div>
+                <div style="width: 30px; height: 30px; border: 3px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <button class="coco-btn danger" id="cancelCap" style="margin-top: 10px;">取消</button>
+            </div>
+        `);
         
         let cancelFlag = false;
         wait.querySelector("#cancelCap").onclick = () => { cancelFlag = true; };
@@ -510,6 +513,28 @@
             border-top: 1px solid #444;
             padding-top: 15px;
             flex-shrink: 0;
+        }
+        .coco-wait-box {
+            background: rgba(0, 0, 0, 0.85); /* 深色半透明背景 */
+            color: #fff;
+            padding: 40px 60px;
+            border-radius: 12px;
+            text-align: center;
+            
+            /* ★關鍵修正：讓它在新的 Modal 系統中自動置中★ */
+            margin: auto; 
+            
+            /* 尺寸限制 */
+            width: auto;
+            min-width: 200px;
+            max-width: 90vw;
+            
+            /* 內部排版 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
     `;
     document.head.appendChild(styleEl);
