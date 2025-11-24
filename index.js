@@ -75,9 +75,9 @@
     // 為了美觀，我們稍微調整一下按鈕的 Z-Index 和位置，避免擋到 ST 的 Topbar
     const bar = document.createElement("div");
     bar.id = "coco-snap-bar";
-    bar.style.cssText = "position:fixed;top:40px;right:10px;z-index:2000;display:flex;gap:8px;opacity:.1;transition:.2s";
+    bar.style.cssText = "position:fixed;top:20px;right:20px;z-index:2000;display:flex;gap:8px;opacity:.2;transition:.2s";
     bar.onmouseenter = () => bar.style.opacity = 1;
-    bar.onmouseleave = () => bar.style.opacity = .1;
+    bar.onmouseleave = () => bar.style.opacity = .2;
 
     const mkBtn = t => { 
         const b = document.createElement("button"); 
@@ -88,7 +88,7 @@
         return b; 
     };
 
-    const shotBtn = mkBtn("📷 截圖");
+    const shotBtn = mkBtn("📷 ");
     const setBtn = mkBtn("⚙️"); 
     bar.append(shotBtn, setBtn); 
     document.body.appendChild(bar);
@@ -126,10 +126,10 @@
             ${row("頭像寬度(px)","avatarW",cfg.avatarW,"number")}
             ${chk("顯示頭像","showAvatar",cfg.showAvatar)}
         </div>
-        <div style="text-align:right;margin-top:20px;border-top:1px solid #444;padding-top:10px;">
-            <button class="menu_button" id="ok" style="margin-right:8px;">確定</button>
-            <button class="menu_button" id="x">取消</button>
-            <button class="menu_button_danger" id="re" style="margin-left:8px;">還原預設</button>
+        <div class="coco-actions">
+            <button class="coco-btn" id="ok">確定</button>
+            <button class="coco-btn" id="x">取消</button>
+            <button class="coco-btn danger" id="re">還原預設</button>
         </div></div>`;
         const ov = modal(html);
         const v = id => { const el = ov.querySelector(`#${id}`); return el.type === "checkbox" ? el.checked : el.value; };
@@ -166,9 +166,9 @@
             <label><input type="radio" name="rangeMode" value="last2"> 最後兩則</label><br>
             <label><input type="radio" name="rangeMode" value="all"> 全部訊息</label>
         </div>
-        <div style="text-align:right;margin-top:20px">
-            <button class="menu_button" id="go" style="margin-right:8px;">截圖</button>
-            <button class="menu_button" id="no">取消</button>
+        <div class="coco-actions">
+            <button class="coco-btn" id="go">截圖</button>
+            <button class="coco-btn" id="no">取消</button>
         </div></div>`);
         ask.querySelector("#no").onclick = () => ask.remove();
         ask.querySelector("#go").onclick = () => {
@@ -183,7 +183,7 @@
     async function capture(start, end, mode = "last") {
         const wait = modal(`<div id="waitBox" style="background:rgba(0,0,0,.8);padding:40px 60px;border-radius:12px;color:#fff;display:flex;flex-direction:column;align-items:center;font-family:${cfg.fFamily}">
             <div style="font-size:20px;margin-bottom:20px">截圖中，請稍候…</div>
-            <button class="menu_button_danger" id="cancelCap">取消</button>
+            <button class="coco-btn danger" id="cancelCap">取消</button>
         </div>`);
         
         let cancelFlag = false;
@@ -261,26 +261,41 @@
     function save(blob, name) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.click(); }
 
     /* ===== 6. 容器 / style ===== */
-    // 插入樣式 (建議可以用 CSS 檔案，但為了方便維持 inline)
     const styleEl = document.createElement('style');
     styleEl.innerHTML = `
-        .__snap *{font-family:var(--ff)!important;font-size:var(--fs)!important;line-height:var(--lh)!important}
-        .__snap em,.__snap i{color:var(--it)!important}
-        .__snap strong,.__snap b{font-weight:bold!important; color: inherit;}
+        .__snap * { font-family: var(--ff)!important; font-size: var(--fs)!important; line-height: var(--lh)!important; }
+        .__snap em, .__snap i { color: var(--it)!important; }
+        .__snap strong, .__snap b { font-weight: bold!important; color: inherit; }
+        
+        /* 您的自定義按鈕樣式 (強制覆蓋 ST 樣式) */
+        .coco-btn {
+            padding: 8px 16px !important;
+            font-size: 14px !important;
+            background: #444 !important;
+            color: #fff !important;
+            border: 1px solid #666 !important;
+            border-radius: 4px !important;
+            cursor: pointer !important;
+            min-width: 70px !important; /* 避免被擠扁 */
+            height: auto !important;    /* 避免變成長條 */
+            display: inline-block !important;
+            margin-left: 10px !important;
+            transition: background 0.2s;
+        }
+        .coco-btn:hover { background: #666 !important; }
+        .coco-btn.danger { background: #822 !important; border-color: #a44 !important; }
+        .coco-btn.danger:hover { background: #a33 !important; }
+
+        /* 按鈕容器：靠右對齊 */
+        .coco-actions {
+            display: flex !important;
+            justify-content: flex-end !important;
+            align-items: center !important;
+            margin-top: 20px !important;
+            width: 100% !important;
+        }
     `;
     document.head.appendChild(styleEl);
-
-    function container() {
-        const wDom = cfg.width / SCALE, fsDom = (cfg.fSize / SCALE) + "px", lhDom = (cfg.fSize * cfg.lineR / SCALE) + "px";
-        const d = document.createElement("div");
-        d.className = "__snap";
-        d.style.cssText = `position:fixed;top:-9999px;left:0;width:${wDom}px;background:${cfg.bg};padding:20px;display:flex;flex-direction:column;gap:20px;color:${cfg.txt}`;
-        d.style.setProperty("--ff", cfg.fFamily); 
-        d.style.setProperty("--fs", fsDom); 
-        d.style.setProperty("--lh", lhDom); 
-        d.style.setProperty("--it", cfg.italicColor);
-        return d;
-    }
 
     /* ===== 7. 單則訊息處理 ===== */
     async function buildBlock(m) {
