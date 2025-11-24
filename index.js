@@ -96,25 +96,33 @@
         `<div style="margin-bottom:12px"><label><input type="checkbox" id="${id}" ${c ? "checked" : ""}> ${l}</label></div>`;
     
     // Modal 改進：加入 backdrop-filter 讓背景模糊，更有質感
+    /* ===== 終極修正版 modal 函式 ===== */
     const modal = html => { 
         const o = document.createElement("div"); 
+        
+        // 使用更相容的 CSS 寫法
         o.style.cssText = `
             position: fixed;
-            inset: 0;
+            top: 0; left: 0; right: 0; bottom: 0; /* 取代 inset: 0 以獲得更好的相容性 */
+            width: 100vw; height: 100vh;
             background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(2px);
-            z-index: 99999;
+            z-index: 2147483647; /* 使用 CSS 允許的最大整數，確保在最上層 */
             display: flex;
-            padding: 20px 10px; /* 上下左右留點緩衝空間 */
-            overflow-y: auto;   /* 讓黑底層本身可以捲動 */
+            padding: 20px 10px;
+            overflow-y: auto;
+            backdrop-filter: blur(2px); /* 如果手機不支援這行會自動忽略，不影響功能 */
         `;
         o.innerHTML = html; 
         
+        // 點擊背景關閉
         o.onclick = (e) => {
             if (e.target === o) o.remove();
         };
         
-        document.body.appendChild(o); 
+        // ★★★ 關鍵修改：掛載到 documentElement (<html>) 而不是 body ★★★
+        // 這能避開 body 上可能存在的 filter/transform 導致 fixed 失效的問題
+        document.documentElement.appendChild(o); 
+        
         return o; 
     };
 
