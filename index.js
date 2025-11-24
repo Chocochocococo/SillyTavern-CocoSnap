@@ -265,14 +265,27 @@
                 if (cancelFlag) { wait.remove(); return; }
                 const c = container(); segs[i].forEach(n => c.appendChild(n));
                 document.body.appendChild(c);
-                await new Promise(r => setTimeout(r, 80)); // 緩衝讓 DOM 渲染
+                
+                // 稍微增加一點延遲，讓手機有時間渲染 DOM
+                await new Promise(r => setTimeout(r, 100)); 
+                
                 if (cancelFlag) { document.body.removeChild(c); wait.remove(); return; }
                 
-                // 使用 window.html2canvas
+                // ★★★ 關鍵修正開始 ★★★
+                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 800;
+                
+                // 如果是手機，強制 DPR 為 1 (這樣總縮放就是 SCALE 的 2倍，夠清晰了且不會爆記憶體)
+                // 如果是電腦，維持使用原本的高畫質設定
+                const safeDPR = isMobile ? 1 : (window.devicePixelRatio || 1);
+                
                 const cvs = await window.html2canvas(c, { 
-                    scale: SCALE * (window.devicePixelRatio || 1),
-                    backgroundColor: cfg.bg  // <--- 關鍵：強制讓背景色與您的設定一致，白線就會隱形了
+                    scale: SCALE * safeDPR, 
+                    backgroundColor: cfg.bg,
+                    // 針對 iOS 的額外優化：停用 logging 節省效能
+                    logging: false,
                 });
+                // ★★★ 關鍵修正結束 ★★★
+
                 const blob = await new Promise(r => cvs.toBlob(r));
                 
                 if (zip) zip.file(`${chatName}-${i + 1}.png`, blob); 
