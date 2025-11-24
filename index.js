@@ -98,8 +98,22 @@
     // Modal 改進：加入 backdrop-filter 讓背景模糊，更有質感
     const modal = html => { 
         const o = document.createElement("div"); 
-        o.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:99999"; 
+        o.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(2px);
+            z-index: 99999;
+            display: flex;
+            padding: 20px 10px; /* 上下左右留點緩衝空間 */
+            overflow-y: auto;   /* 讓黑底層本身可以捲動 */
+        `;
         o.innerHTML = html; 
+        
+        o.onclick = (e) => {
+            if (e.target === o) o.remove();
+        };
+        
         document.body.appendChild(o); 
         return o; 
     };
@@ -109,8 +123,10 @@
         cfg = getCfg();
         const html = `
         <div class="coco-dialog-box" style="font-family:${cfg.fFamily}">
-            <h3 style="margin:0 0 15px;font-size:18px;border-bottom:1px solid #444;padding-bottom:10px;">截圖設定</h3>
-            <div style="flex:1; overflow-y:auto; padding-right:5px;"> ${row("使用者背景","userBg",cfg.userBg,"color")}
+            <h3 style="margin:0 0 15px;font-size:18px;">截圖設定</h3>
+            
+            <div class="coco-dialog-content"> 
+                ${row("使用者背景","userBg",cfg.userBg,"color")}
                 ${row("角色背景","aiBg",cfg.aiBg,"color")}
                 ${row("一般文字色","txt",cfg.txt,"color")}
                 ${row("引號文字色","quoteColor",cfg.quoteColor,"color")}
@@ -122,10 +138,11 @@
                 ${row("頭像寬度(px)","avatarW",cfg.avatarW,"number")}
                 ${chk("顯示頭像","showAvatar",cfg.showAvatar)}
             </div>
+
             <div class="coco-actions">
                 <button class="coco-btn" id="ok">確定</button>
                 <button class="coco-btn" id="x">取消</button>
-                <button class="coco-btn danger" id="re">還原預設</button>
+                <button class="coco-btn danger" id="re">還原</button>
             </div>
         </div>`;
         
@@ -158,13 +175,17 @@
         const ask = modal(`
         <div class="coco-dialog-box" style="font-family:${cfg.fFamily}">
             <h3 style="margin-top:0;font-size:18px">截圖範圍</h3>
-            ${row("起始訊息ID (選填)","sid","","number")}
-            ${row("結束訊息ID (選填)","eid","","number")}
-            <div style="margin-bottom:12px;background:#333;padding:10px;border-radius:5px;">
-                <label><input type="radio" name="rangeMode" value="last" checked> 最後一則</label><br>
-                <label><input type="radio" name="rangeMode" value="last2"> 最後兩則</label><br>
-                <label><input type="radio" name="rangeMode" value="all"> 全部訊息</label>
+            
+            <div class="coco-dialog-content">
+                ${row("起始訊息ID (選填)","sid","","number")}
+                ${row("結束訊息ID (選填)","eid","","number")}
+                <div style="margin-bottom:12px;background:#333;padding:10px;border-radius:5px;">
+                    <label><input type="radio" name="rangeMode" value="last" checked> 最後一則</label><br>
+                    <label><input type="radio" name="rangeMode" value="last2"> 最後兩則</label><br>
+                    <label><input type="radio" name="rangeMode" value="all"> 全部訊息</label>
+                </div>
             </div>
+
             <div class="coco-actions">
                 <button class="coco-btn" id="go">截圖</button>
                 <button class="coco-btn" id="no">取消</button>
@@ -296,7 +317,7 @@
         }
     }
 
-    /* ===== 6. 容器 / style (手機版終極修正) ===== */
+    /* ===== 6. 容器 / style (手機版終極修正 V2) ===== */
     const styleEl = document.createElement('style');
     styleEl.innerHTML = `
         /* 截圖生成用的隱藏容器 */
@@ -304,20 +325,21 @@
         .__snap em, .__snap i { color: var(--it)!important; }
         .__snap strong, .__snap b { font-weight: bold!important; color: inherit; }
 
-        /* === 工具列按鈕 === */
+        /* === 工具列按鈕 (右下角垂直排列) === */
         #coco-snap-bar {
             position: fixed;
             z-index: 2000;
             display: flex;
-            gap: 8px;
-            opacity: 0.3;
+            gap: 10px;
+            opacity: 0.5;
             transition: 0.2s;
+            /* 預設(電腦)位置 */
             top: 20px;
             right: 20px;
         }
         #coco-snap-bar:hover { opacity: 1; }
 
-        /* === 手機版工具列：移到更下方，避免擋住功能 === */
+        /* === 手機版工具列：強制固定在右下角 === */
         @media (max-width: 800px) {
             #coco-snap-bar {
                 /* 手機版往下移，避免擋到 ST 的漢堡選單或頂部按鈕 */
@@ -327,34 +349,37 @@
             }
         }
 
-        /* === 彈出視窗 (Modal) === */
+        /* === 彈出視窗核心樣式 === */
         .coco-dialog-box {
             background: #2b2b2b;
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 12px;
             color: #ddd;
             border: 1px solid #555;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            
+            /* 關鍵修正：使用 margin: auto 在 flex 容器中自動置中 */
+            margin: auto; 
             
             display: flex;
             flex-direction: column;
-            box-sizing: border-box; /* 確保 padding 不會撐大寬度 */
+            box-sizing: border-box;
             
             /* 電腦版尺寸 */
-            width: 400px;
-            max-height: 85vh;
+            width: 450px;
+            max-width: 95vw; /* 確保不超過螢幕寬 */
+            max-height: auto; /* 讓內容決定高度，但不要超過下一行的限制 */
         }
 
-        /* === 手機版視窗強制修正 === */
-        @media (max-width: 800px) {
-            .coco-dialog-box {
-                width: 90vw !important;      /* 寬度佔滿 90% */
-                max-height: 75vh !important; /* 高度最多 75%，預留鍵盤空間 */
-                padding: 15px !important;
-            }
+        /* 內容捲動區 (確保只有內容捲動，標題和按鈕固定) */
+        .coco-dialog-content {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 60vh; /* 限制內容高度，避免整個視窗太長 */
+            padding-right: 5px; /* 捲軸空間 */
         }
 
-        /* 按鈕樣式 */
+        /* === 按鈕樣式 === */
         .coco-btn {
             padding: 8px 16px !important;
             font-size: 14px !important;
@@ -371,15 +396,14 @@
         }
         .coco-btn:hover { background: #666 !important; }
         .coco-btn.danger { background: #822 !important; border-color: #a44 !important; }
-        .coco-btn.danger:hover { background: #a33 !important; }
-
+        
         .coco-actions {
             display: flex !important;
             justify-content: flex-end !important;
             align-items: center !important;
             margin-top: 20px !important;
-            width: 100% !important;
-            flex-shrink: 0; /* 防止按鈕被壓縮 */
+            border-top: 1px solid #444; /* 加條線區隔 */
+            padding-top: 15px;
         }
     `;
     document.head.appendChild(styleEl);
