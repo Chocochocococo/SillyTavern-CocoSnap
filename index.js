@@ -74,9 +74,6 @@
     // 為了美觀，我們稍微調整一下按鈕的 Z-Index 和位置，避免擋到 ST 的 Topbar
     const bar = document.createElement("div");
     bar.id = "coco-snap-bar";
-    bar.style.cssText = "position:fixed;top:20px;right:20px;z-index:2000;display:flex;gap:8px;opacity:.2;transition:.2s";
-    bar.onmouseenter = () => bar.style.opacity = 1;
-    bar.onmouseleave = () => bar.style.opacity = .2;
 
     const mkBtn = t => { 
         const b = document.createElement("button"); 
@@ -109,27 +106,29 @@
 
     /* ===== 4. 設定面板 (邏輯微調：儲存時呼叫 saveCfg) ===== */
     setBtn.onclick = () => {
-        cfg = getCfg(); // 確保拿到最新
-        const html = `<div style="background:#2b2b2b;padding:20px;border-radius:10px;min-width:340px;color:#ddd;font-family:${cfg.fFamily};border:1px solid #555;box-shadow:0 10px 30px rgba(0,0,0,0.5);">
-        <h3 style="margin:0 0 15px;font-size:18px;border-bottom:1px solid #444;padding-bottom:10px;">截圖設定</h3>
-        <div style="max-height:60vh;overflow-y:auto;padding-right:10px;">
-            ${row("使用者背景","userBg",cfg.userBg,"color")}
-            ${row("角色背景","aiBg",cfg.aiBg,"color")}
-            ${row("一般文字色","txt",cfg.txt,"color")}
-            ${row("引號文字色","quoteColor",cfg.quoteColor,"color")}
-            ${row("斜體文字色","italicColor",cfg.italicColor,"color")}
-            ${row("字體大小(px)","fSize",cfg.fSize,"number")}
-            ${row("字體名稱","fFamily",cfg.fFamily)}
-            ${row("截圖寬度(px)","width",cfg.width,"number")}
-            ${row("截圖背景色","bg",cfg.bg,"color")}
-            ${row("頭像寬度(px)","avatarW",cfg.avatarW,"number")}
-            ${chk("顯示頭像","showAvatar",cfg.showAvatar)}
-        </div>
-        <div class="coco-actions">
-            <button class="coco-btn" id="ok">確定</button>
-            <button class="coco-btn" id="x">取消</button>
-            <button class="coco-btn danger" id="re">還原預設</button>
-        </div></div>`;
+        cfg = getCfg();
+        const html = `
+        <div class="coco-dialog-box" style="font-family:${cfg.fFamily}">
+            <h3 style="margin:0 0 15px;font-size:18px;border-bottom:1px solid #444;padding-bottom:10px;">截圖設定</h3>
+            <div style="flex:1; overflow-y:auto; padding-right:5px;"> ${row("使用者背景","userBg",cfg.userBg,"color")}
+                ${row("角色背景","aiBg",cfg.aiBg,"color")}
+                ${row("一般文字色","txt",cfg.txt,"color")}
+                ${row("引號文字色","quoteColor",cfg.quoteColor,"color")}
+                ${row("斜體文字色","italicColor",cfg.italicColor,"color")}
+                ${row("字體大小(px)","fSize",cfg.fSize,"number")}
+                ${row("字體名稱","fFamily",cfg.fFamily)}
+                ${row("截圖寬度(px)","width",cfg.width,"number")}
+                ${row("截圖背景色","bg",cfg.bg,"color")}
+                ${row("頭像寬度(px)","avatarW",cfg.avatarW,"number")}
+                ${chk("顯示頭像","showAvatar",cfg.showAvatar)}
+            </div>
+            <div class="coco-actions">
+                <button class="coco-btn" id="ok">確定</button>
+                <button class="coco-btn" id="x">取消</button>
+                <button class="coco-btn danger" id="re">還原預設</button>
+            </div>
+        </div>`;
+        
         const ov = modal(html);
         const v = id => { const el = ov.querySelector(`#${id}`); return el.type === "checkbox" ? el.checked : el.value; };
         
@@ -156,19 +155,21 @@
     /* ===== 5. 截圖流程 (大部分維持原樣) ===== */
     shotBtn.onclick = () => {
         cfg = getCfg();
-        const ask = modal(`<div style="background:#2b2b2b;padding:20px;border-radius:10px;min-width:340px;color:#ddd;font-family:${cfg.fFamily};border:1px solid #555;">
-        <h3 style="margin-top:0;font-size:18px">截圖範圍</h3>
-        ${row("起始訊息ID (選填)","sid","","number")}
-        ${row("結束訊息ID (選填)","eid","","number")}
-        <div style="margin-bottom:12px;background:#333;padding:10px;border-radius:5px;">
-            <label><input type="radio" name="rangeMode" value="last" checked> 最後一則</label><br>
-            <label><input type="radio" name="rangeMode" value="last2"> 最後兩則</label><br>
-            <label><input type="radio" name="rangeMode" value="all"> 全部訊息</label>
-        </div>
-        <div class="coco-actions">
-            <button class="coco-btn" id="go">截圖</button>
-            <button class="coco-btn" id="no">取消</button>
-        </div></div>`);
+        const ask = modal(`
+        <div class="coco-dialog-box" style="font-family:${cfg.fFamily}">
+            <h3 style="margin-top:0;font-size:18px">截圖範圍</h3>
+            ${row("起始訊息ID (選填)","sid","","number")}
+            ${row("結束訊息ID (選填)","eid","","number")}
+            <div style="margin-bottom:12px;background:#333;padding:10px;border-radius:5px;">
+                <label><input type="radio" name="rangeMode" value="last" checked> 最後一則</label><br>
+                <label><input type="radio" name="rangeMode" value="last2"> 最後兩則</label><br>
+                <label><input type="radio" name="rangeMode" value="all"> 全部訊息</label>
+            </div>
+            <div class="coco-actions">
+                <button class="coco-btn" id="go">截圖</button>
+                <button class="coco-btn" id="no">取消</button>
+            </div>
+        </div>`);
         ask.querySelector("#no").onclick = () => ask.remove();
         ask.querySelector("#go").onclick = () => {
             const sid = ask.querySelector("#sid").value ? +ask.querySelector("#sid").value : null;
@@ -180,7 +181,7 @@
     };
 
     async function capture(start, end, mode = "last") {
-        const wait = modal(`<div id="waitBox" style="background:rgba(0,0,0,.8);padding:40px 60px;border-radius:12px;color:#fff;display:flex;flex-direction:column;align-items:center;font-family:${cfg.fFamily}">
+        const wait = modal(`<div id="waitBox" style="background:rgba(0,0,0,.8);padding:30px;border-radius:12px;color:#fff;display:flex;flex-direction:column;align-items:center;font-family:${cfg.fFamily}; max-width: 90vw; text-align: center;">
             <div style="font-size:20px;margin-bottom:20px">截圖中，請稍候…</div>
             <button class="coco-btn danger" id="cancelCap">取消</button>
         </div>`);
@@ -262,14 +263,56 @@
 
     function save(blob, name) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.click(); }
 
-    /* ===== 6. 容器 / style ===== */
+    /* ===== 6. 容器 / style (更新版：加入手機適配) ===== */
     const styleEl = document.createElement('style');
     styleEl.innerHTML = `
+        /* 截圖生成用的隱藏容器設定 */
         .__snap * { font-family: var(--ff)!important; font-size: var(--fs)!important; line-height: var(--lh)!important; }
         .__snap em, .__snap i { color: var(--it)!important; }
         .__snap strong, .__snap b { font-weight: bold!important; color: inherit; }
-        
-        /* 您的自定義按鈕樣式 (強制覆蓋 ST 樣式) */
+
+        /* === 按鈕工具列 (coco-snap-bar) 設定 === */
+        #coco-snap-bar {
+            position: fixed;
+            z-index: 2000;
+            display: flex;
+            gap: 8px;
+            opacity: 0.3; /* 手機上預設稍微清楚一點，因為沒有滑鼠 hover */
+            transition: 0.2s;
+            /* 電腦版預設位置 */
+            top: 20px;
+            right: 20px;
+        }
+        #coco-snap-bar:hover { opacity: 1; }
+
+        /* === 手機版工具列位置調整 (螢幕寬度小於 800px 時觸發) === */
+        @media (max-width: 800px) {
+            #coco-snap-bar {
+                /* 手機版往下移，避免擋到 ST 的漢堡選單或頂部按鈕 */
+                top: 80px !important; 
+                right: 10px !important;
+                opacity: 0.8 !important; /* 手機不容易 hover，保持可見 */
+            }
+        }
+
+        /* === 彈出視窗 (Modal) 通用樣式 === */
+        .coco-dialog-box {
+            background: #2b2b2b;
+            padding: 20px;
+            border-radius: 10px;
+            color: #ddd;
+            border: 1px solid #555;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            /* 關鍵：尺寸控制 */
+            width: 400px;        /* 電腦版寬度 */
+            max-width: 90vw;     /* 手機版最大不超過螢幕寬度的 90% */
+            max-height: 85vh;    /* 高度不超過螢幕 85%，避免無法捲動 */
+            overflow-y: auto;    /* 內容太長時出現捲軸 */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 您的自定義按鈕樣式 */
         .coco-btn {
             padding: 8px 16px !important;
             font-size: 14px !important;
@@ -278,8 +321,8 @@
             border: 1px solid #666 !important;
             border-radius: 4px !important;
             cursor: pointer !important;
-            min-width: 70px !important; /* 避免被擠扁 */
-            height: auto !important;    /* 避免變成長條 */
+            min-width: 70px !important;
+            height: auto !important;
             display: inline-block !important;
             margin-left: 10px !important;
             transition: background 0.2s;
@@ -288,7 +331,6 @@
         .coco-btn.danger { background: #822 !important; border-color: #a44 !important; }
         .coco-btn.danger:hover { background: #a33 !important; }
 
-        /* 按鈕容器：靠右對齊 */
         .coco-actions {
             display: flex !important;
             justify-content: flex-end !important;
